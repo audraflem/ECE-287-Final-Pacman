@@ -1,0 +1,129 @@
+module Ms_Pacman(
+input CLOCK_50,
+input [3:0] KEY,
+input [9:0] SW,
+output [3:0] LEDR
+);
+
+wire right; //connect to Key3
+assign right = KEY[3];
+wire left; //connect to Key0
+assign left = KEY[0];
+wire up; //connect to Key1
+assign up = KEY[1];
+wire down; //connect to KEY2
+assign down = KEY[2];
+
+wire rst; //connect to SW[0]
+assign rst = SW[0];
+wire clk;
+
+reg [14:0] positionX;
+reg [14:0] positionY;
+
+
+reg proof_right;
+assign LEDR[3] = proof_right;
+reg proof_left;
+assign  LEDR[0] = proof_left;
+reg proof_up;
+assign  LEDR[1] = proof_up;
+reg proof_down;
+assign LEDR[2] = proof_down;
+
+
+reg [2:0] S;
+reg [2:0] NS;
+
+parameter START = 3'd0,
+			 STAYSTILL = 3'd1,
+			 MOVERIGHT = 3'd2,
+			 MOVELEFT = 3'd3,
+			 MOVEUP = 3'd4,
+			 MOVEDOWN = 3'd5,
+			 ERROR = 3'd6;
+			 
+always@(posedge clk or negedge rst) 
+begin
+	if(rst == 1'b0)
+		S <= START;
+	else 
+		S <= NS;
+end
+		
+always@(*)
+begin
+	case(S) 
+	START: NS = STAYSTILL;
+	STAYSTILL: if (up == 1'b1 && right == 1'b0 && left == 1'b0 && down == 1'b0)
+						NS = MOVEUP;
+				  else if (up == 1'b0 && right == 1'b1 && left == 1'b0 && down == 1'b0)
+						NS = MOVERIGHT;
+				  else if (up == 1'b0 && right == 1'b0 && left == 1'b1 && down == 1'b0)
+						NS = MOVELEFT;
+				  else if (up == 1'b0 && right == 1'b0 && left == 1'b0 && down == 1'b1)
+						NS = MOVEDOWN;
+	MOVERIGHT: if (right == 1'b1)
+						NS = MOVERIGHT;
+				  else if (right == 1'b0)
+						NS = STAYSTILL;
+	MOVELEFT: if (left == 1'b1)
+						NS = MOVELEFT;
+				  else if (left == 1'b0)
+						NS = STAYSTILL;
+	MOVEUP: if (up == 1'b1)
+						NS = MOVEUP;
+				  else if (up == 1'b0)
+						NS = STAYSTILL; 
+	MOVEDOWN: if (down == 1'b1)
+						NS = MOVEDOWN;
+				  else if (down == 1'b0)
+						NS = STAYSTILL;
+	default: NS = ERROR;
+	endcase
+end
+
+always@(posedge clk or negedge rst) 
+begin
+	if(rst == 1'b0) begin 
+		positionX <= 15'd0;//origin x-component
+		positionY <= 15'd0;//origin y-component
+		proof_right <= 1'b0;
+		proof_left <= 1'b0;
+		proof_up <= 1'b0;
+		proof_down <= 1'b0;
+		end
+    else
+		case(S)
+			START: begin
+				positionX <= 15'd0;//origin x-component
+				positionY <= 15'd0;//origin y-component
+				proof_right <= 1'b0;
+				proof_left <= 1'b0;
+				proof_up <= 1'b0;
+				proof_down <= 1'b0;
+				end 
+			MOVERIGHT: 
+			begin
+				positionX <= positionX + 1'b1;
+				proof_right <= 1'b1;
+			end
+			MOVELEFT: 
+			begin
+				positionX <= positionX - 1'b1;
+				proof_left <= 1'b1;
+			end
+			MOVEUP:
+			begin
+				positionY <= positionY + 1'b1;
+				proof_up <= 1'b1;
+			end
+			MOVEDOWN: 
+			begin
+			positionY <= positionY - 1'b1;
+			proof_down <= 1'b1;
+			end
+		endcase
+end					
+
+endmodule
